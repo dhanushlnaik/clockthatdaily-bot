@@ -43,10 +43,19 @@ function optional(name: string, fallback = ""): string {
 export const config = {
   token: required("DISCORD_TOKEN"),
   clientId: required("DISCORD_CLIENT_ID"),
-  /** Set while developing: guild commands appear instantly, global ones cache. */
-  guildId: optional("DISCORD_GUILD_ID"),
+  /**
+   * Guilds to register commands to, comma separated.
+   *
+   * Guild commands appear instantly where global ones are cached for up to an
+   * hour, so this is how you get commands into a specific server now. Leave it
+   * empty to register globally instead.
+   */
+  guildIds: optional("DISCORD_GUILD_ID")
+    .split(",")
+    .map((id) => id.trim())
+    .filter(Boolean),
   siteUrl: optional("SITE_URL", "https://clockthatdaily.com").replace(/\/$/, ""),
   apiSecret: optional("BOT_API_SECRET")
 } as const;
 
-export const isDev = Boolean(config.guildId);
+export const isDev = config.guildIds.length > 0;

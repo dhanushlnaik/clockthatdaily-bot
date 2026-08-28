@@ -17,12 +17,25 @@ const chat = commands.map((c) => c.data.toJSON());
 // Ordinary commands go wherever we are pointed; the Activity launcher is
 // application-wide and only exists on the global route.
 if (isDev) {
-  const guild = (await rest.put(
-    Routes.applicationGuildCommands(config.clientId, config.guildId),
-    { body: chat }
-  )) as unknown[];
-  console.log(`Registered ${guild.length} command(s) to guild ${config.guildId}:`);
-  for (const c of commands.values()) console.log(`  /${c.data.name} — ${c.data.description}`);
+  for (const guildId of config.guildIds) {
+    try {
+      const guild = (await rest.put(Routes.applicationGuildCommands(config.clientId, guildId), {
+        body: chat
+      })) as unknown[];
+      console.log(`Registered ${guild.length} command(s) to guild ${guildId}:`);
+      for (const c of commands.values()) console.log(`  /${c.data.name} — ${c.data.description}`);
+    } catch (error) {
+      // Almost always means the app is not in that guild — registering guild
+      // commands requires it to have been invited there first.
+      const status = (error as { status?: number }).status;
+      console.error(
+        `\nCould not register to guild ${guildId}${status ? ` (HTTP ${status})` : ""}.` +
+          (status === 403 || status === 404
+            ? "\n  The app is probably not in that server yet — invite it first."
+            : "")
+      );
+    }
+  }
 
   // A global PUT replaces everything global, so it carries the entry point
   // alone here — the chat commands already live on the guild route.
