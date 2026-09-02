@@ -44,12 +44,9 @@ A gateway bot needs a process that stays running, so Vercel will not do.
 # once, on the server
 sudo apt update && sudo apt install -y nodejs npm
 sudo npm i -g pnpm pm2
-sudo mkdir -p /opt/clockthatdaily-bot /var/log/ctd-bot
-sudo chown -R $USER /opt/clockthatdaily-bot /var/log/ctd-bot
-
-# deploy
-cd /opt/clockthatdaily-bot
-git clone <this repo> .          # or rsync the directory up
+# deploy — anywhere you like, the PM2 config follows the directory
+mkdir -p ~/bot && cd ~/bot
+git clone <this repo> clockthatdaily-bot && cd clockthatdaily-bot
 cp .env.example .env             # then fill it in — see below
 pnpm install
 pnpm build
@@ -62,8 +59,8 @@ pm2 startup                      # prints a command — run it, for boot surviva
 
 `.env` must contain `DISCORD_TOKEN`, `DISCORD_CLIENT_ID`, `BOT_API_SECRET`
 (matching the website) and optionally `DISCORD_GUILD_ID`. It is loaded relative
-to the working directory, which `ecosystem.config.cjs` pins to
-`/opt/clockthatdaily-bot` — so keep `.env` there, beside `dist/`.
+to the working directory, which `ecosystem.config.cjs` sets to the repo root —
+so keep `.env` beside `dist/`. Logs land in `logs/` in the same place.
 
 ### Day to day
 
