@@ -36,15 +36,56 @@ can take up to an hour.
 
 `BOT_API_SECRET` must match the value in the website's environment.
 
-## Hosting
+## Hosting on Ubuntu with PM2
 
-This is a gateway bot, so it needs a process that stays running — Vercel will
-not do. Anything that runs Node works: a small VPS, Railway, Fly, or a
-`systemd` unit on the droplet.
+A gateway bot needs a process that stays running, so Vercel will not do.
 
 ```bash
-pnpm build && pnpm start
+# once, on the server
+sudo apt update && sudo apt install -y nodejs npm
+sudo npm i -g pnpm pm2
+sudo mkdir -p /opt/clockthatdaily-bot /var/log/ctd-bot
+sudo chown -R $USER /opt/clockthatdaily-bot /var/log/ctd-bot
+
+# deploy
+cd /opt/clockthatdaily-bot
+git clone <this repo> .          # or rsync the directory up
+cp .env.example .env             # then fill it in — see below
+pnpm install
+pnpm build
+pnpm register                    # only when commands have changed
+
+pm2 start ecosystem.config.cjs
+pm2 save                         # remember the process list
+pm2 startup                      # prints a command — run it, for boot survival
 ```
+
+`.env` must contain `DISCORD_TOKEN`, `DISCORD_CLIENT_ID`, `BOT_API_SECRET`
+(matching the website) and optionally `DISCORD_GUILD_ID`. It is loaded relative
+to the working directory, which `ecosystem.config.cjs` pins to
+`/opt/clockthatdaily-bot` — so keep `.env` there, beside `dist/`.
+
+### Day to day
+
+```bash
+pm2 logs ctd-bot          # follow output
+pm2 restart ctd-bot       # after a deploy
+pm2 status                # is it alive, how many restarts
+```
+
+### Updating
+
+```bash
+cd /opt/clockthatdaily-bot && git pull && pnpm install && pnpm build
+pm2 restart ctd-bot
+```
+
+### One instance only
+
+The config runs a single process in fork mode on purpose. A gateway bot holds
+one websocket per token: run two and Discord delivers every interaction to
+both, each tries to reply, and you get duplicate messages and "interaction has
+already been acknowledged" errors. Never `pm2 scale` this.
 
 ## Commands
 
