@@ -52,6 +52,19 @@ export interface PlayerProfile {
   todayAura?: number;
 }
 
+export interface ShareResult {
+  linked?: boolean;
+  played: boolean;
+  username?: string;
+  aura?: number;
+  card?: string;
+}
+
+export interface FriendsBoard {
+  linked: boolean;
+  rows: { username: string; totalAura: number; currentStreak: number; isYou: boolean }[];
+}
+
 export class ApiError extends Error {
   constructor(
     message: string,
@@ -94,5 +107,8 @@ export const api = {
   arcade: () => get<ArcadeGame[]>("/arcade"),
   leaderboard: (scope: "aura" | "streak") => get<LeaderRow[]>(`/leaderboard?scope=${scope}`),
   /** Looked up by Discord account id — the site already stores it from OAuth. */
-  player: (discordId: string) => get<PlayerProfile>(`/player/${discordId}`)
+  player: (discordId: string) => get<PlayerProfile>(`/player/${discordId}`),
+  share: (discordId: string, game: string) =>
+    get<ShareResult>(`/share/${discordId}?game=${encodeURIComponent(game)}`),
+  friends: (discordId: string) => get<FriendsBoard>(`/friends/${discordId}`)
 };
